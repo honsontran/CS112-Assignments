@@ -48,7 +48,7 @@ class Occurrence {
  *
  */
 public class LittleSearchEngine {
-	
+
 	/**
 	 * This is a hash table of all keywords. The key is the actual keyword, and the associated value is
 	 * an array list of all occurrences of the keyword in documents. The array list is maintained in descending
@@ -139,6 +139,59 @@ public class LittleSearchEngine {
 	 */
 	public String getKeyWord(String word) {
 		
+		String curr = "";		//keeps track of our current keyword
+		
+		//Exception: When punctuation is in the beginning.
+		if ( Character.isLetter( word.charAt(0) ) ) {
+			return null;			
+		}
+		
+		//Turn everything to lowercase.
+		word.toLowerCase();
+		
+		//Run through the word and see if it's a letter at each char.
+		for (int i = 0; i < word.length(); i++) {
+			
+			if ( Character.isLetter( word.charAt(i) ) ) {			//If letter, add to keyword string
+				curr += word.charAt(i);
+			}
+			
+			else {	//Anything other than a letter
+				if ( Character.isDigit( word.charAt(i) ) ) {
+					return null;
+				}
+				
+				else if ( isPunctuation(word.charAt(i)) ) { //If it's punctuation
+					//Case 1: If the punctuation is between 2 chars (i.e. we're), return null.
+					if ( Character.isLetter( word.charAt(i-1) ) && Character.isLetter( word.charAt(i+1) ) ) {
+						return null;
+					}
+				
+					/* Case 2: If there's just a trailing end of punctuation (i.e. what??!!?!?)
+					 * 		   keep checking the rest of the string in the next i++
+					 */
+					
+					// Case 3: If you have punctuation and there's a letter or not a punctuation, return null.
+					if ( !isPunctuation(word.charAt(i)) || Character.isDigit( word.charAt(i+1) ) ) {
+						return null;
+					}
+					
+				}
+			}
+		}
+		
+		return curr;
+	
+	}
+	
+	private boolean isPunctuation(char c) {
+		if (c == '.' || c == ',' || c == '?' || c == ':' || c == ';' || c == '!') {
+			return true;
+		}
+		
+		else {
+			return false;
+		}
 	}
 	
 	/**
