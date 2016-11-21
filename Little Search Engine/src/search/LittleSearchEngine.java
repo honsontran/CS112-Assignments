@@ -108,9 +108,43 @@ public class LittleSearchEngine {
 	 */
 	public HashMap<String,Occurrence> loadKeyWords(String docFile) 
 	throws FileNotFoundException {
-		// COMPLETE THIS METHOD
-		// THE FOLLOWING LINE HAS BEEN ADDED TO MAKE THE METHOD COMPILE
-		return null;
+		//Create a Hashmap to return.
+		HashMap<String, Occurrence> masterKey = new HashMap<String, Occurrence>();
+		
+		//Now, make a scanner to go through the document.
+		Scanner currWord = new Scanner(new File(docFile) );
+		
+		//We want to keep loading in words until the end of the document.
+		while (currWord.hasNext()) {
+			
+			//Target word to compare.
+			String word = currWord.next();
+			
+			/*
+			 * Conditions: Call the getKeywords method. Determine what to do if you get a word or if you
+			 * 			   get null back.
+			 */
+			
+			//Condition 1: If the condition doesn't return null, either put into HashMap or increase the occurrence.
+			if (getKeyWord(word) != null) {
+				//Condition 1a: If this word isn't placed into the HashMap yet.
+				if (!masterKey.containsKey(word)) {
+					Occurrence occur = new Occurrence(docFile, 1);
+					
+					//Place this word into the Hashmap.
+					masterKey.put(word, occur);
+				}
+				
+				else { // If there already is a word in the map present.
+					//Simply add 1 to the frequency.
+					masterKey.get(word).frequency++;
+				}
+			}
+		}
+		
+		//Condition 2: If it's null, don't do anything.
+		
+		return masterKey;
 	}
 	
 	/**
