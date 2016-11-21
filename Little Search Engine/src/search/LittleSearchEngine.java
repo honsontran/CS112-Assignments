@@ -69,6 +69,83 @@ public class LittleSearchEngine {
 		noiseWords = new HashMap<String,String>(100,2.0f);
 	}
 	
+public static void main(String[] args) throws FileNotFoundException{
+		
+		LittleSearchEngine engine = new LittleSearchEngine();
+		HashMap<String, String> noiseWords;
+		noiseWords = engine.noiseWords;
+
+		Scanner textScan = new Scanner(new File("noisewords.txt"));
+		while(textScan.hasNext()){//fills the noiseword hashmap
+			String word = textScan.next();
+			noiseWords.put(word, word);
+			
+			
+		}
+		
+		textScan.close();
+		
+		
+		HashMap<String, Occurrence> keyWords = engine.loadKeyWords("AliceCh1.txt");
+	
+		HashMap<String, Occurrence> keyWordsTwo = engine.loadKeyWords("WowCh1.txt");
+	
+		
+		
+		HashMap<String, ArrayList<Occurrence>> keyWordsIndex = engine.keywordsIndex;
+		
+		
+		
+		for(Map.Entry<String, Occurrence> entry : keyWords.entrySet()){//loads keywords and also checks getKeyWord method at the same time
+			
+			String currWord = entry.getKey();
+			
+			
+			
+			
+		}
+		
+		engine.mergeKeyWords(keyWords);
+		engine.mergeKeyWords(keyWordsTwo);
+		
+		ArrayList<String> topFive = engine.top5search("deep", "world");
+		
+		ArrayList<Occurrence> list1 = keyWordsIndex.get("deep" + "");
+		ArrayList<Occurrence> list2 = keyWordsIndex.get("world");
+		
+		System.out.print("Current list of item one: ");
+		for(int i = 0; i <list1.size(); i++){
+			
+			System.out.print(list1.get(i) + " ");
+			
+			
+		}
+		System.out.println();
+		System.out.println();
+
+		System.out.print("Current list of item two: ");
+
+	    for(int i = 0; i <list2.size(); i++){
+			
+			System.out.print(list2.get(i) + " ");
+			
+			
+		}
+		System.out.println();
+		System.out.println();
+
+		
+		System.out.print("Top five of the two: ");
+
+		for(int i = 0; i <topFive.size(); i++){
+			
+			System.out.print(topFive.get(i));
+			
+			
+		}
+		
+		
+	}
 	/**
 	 * This method indexes all keywords found in all the input documents. When this
 	 * method is done, the keywordsIndex hash table will be filled with all keywords,
@@ -165,8 +242,13 @@ public class LittleSearchEngine {
 			// store all occurances within the kws in 'occurrence'
 			Occurrence occurrence = kws.get(key);
 			
+<<<<<<< HEAD
 			// if the kewords Index does not contain the key we add it to a new occurrence list and place the key value into the keywords index
 			// otherwise, insert the occurance of the keword into the appriopiate place using insertLastOccurance
+=======
+			// if the keywords Index does not contain the key we add it to a new occurrence list and place the key value into the keywords index
+			// otherwise, insert the occurrance of the keyword into the appropriate place using insertLastOccurance
+>>>>>>> refs/remotes/origin/Honson
 			if(!keywordsIndex.containsKey(key))	{	
 				ArrayList<Occurrence> newOccList = new ArrayList<Occurrence>();			
 				newOccList.add(occurrence);
@@ -196,7 +278,42 @@ public class LittleSearchEngine {
 	 * @return Keyword (word without trailing punctuation, LOWER CASE)
 	 */
 	public String getKeyWord(String word) {
+
+		String curr = "";		//keeps track of our current keyword
+		String word2 = word;
+		//Turn everything to lowercase.
+		word2.toLowerCase();
 		
+		if( word2.length() <= 1 || word2 == null ){
+			return null;
+		}
+		while( isPunctuation( word2.charAt( word2.length()-1 ) ) ) {
+			word2 = word2.substring(0, word2.length()-1);
+			
+		}
+		
+		//Run through the word and see if it's a letter at each char.
+		for (int i = 0; i < word2.length(); i++) {
+			
+			if ( !Character.isLetter( word2.charAt(i) ) ) {			//If letter, add to keyword string
+				return null;
+			}
+			
+			else {	//Anything other than a letter
+				curr += word2.charAt(i);
+			}
+		}
+		
+		return curr;
+	
+	}
+	
+	private boolean isPunctuation(char c) {
+		if (c == '.' || c == ',' || c == '?' || c == ':' || c == ';' || c == '!') {
+			return true;
+		}
+		
+<<<<<<< HEAD
 		String curr = "";		//keeps track of our current keyword
 		
 		//Exception: When punctuation is in the beginning.
@@ -247,6 +364,8 @@ public class LittleSearchEngine {
 			return true;
 		}
 		
+=======
+>>>>>>> refs/remotes/origin/Honson
 		else {
 			return false;
 		}
@@ -265,8 +384,6 @@ public class LittleSearchEngine {
 	 *         your code - it is not used elsewhere in the program.
 	 */
 	public ArrayList<Integer> insertLastOccurrence(ArrayList<Occurrence> occs) {
-		// COMPLETE THIS METHOD
-		// THE FOLLOWING LINE HAS BEEN ADDED TO MAKE THE METHOD COMPILE
 		return null;
 	}
 	
@@ -285,8 +402,84 @@ public class LittleSearchEngine {
 	 *         the result is null.
 	 */
 	public ArrayList<String> top5search(String kw1, String kw2) {
-		// COMPLETE THIS METHOD
-		// THE FOLLOWING LINE HAS BEEN ADDED TO MAKE THE METHOD COMPILE
-		return null;
+		//Create an Arraylist to keep track of which documents have the more frequent words in order.
+		ArrayList<String> results = new ArrayList<String>();
+		
+		//Create an ArrayList for the first and second keywords
+		ArrayList<Occurrence> word1 = keywordsIndex.get(kw1);
+		ArrayList<Occurrence> word2 = keywordsIndex.get(kw2);
+		
+		//Keep track of how many documents there currently are in the search results.
+		int total = 0;
+		int i = 0;
+		int j = 0;
+		
+		/*
+		 * Check if any of the lists are null, meaning that there is no such word in the documents.
+		 * This search continues until 5 documents populate the
+		 */
+		
+		//If both lists are null.
+		if (word1 == null && word2 == null) {
+			return results;
+		}
+		
+		else if (word1 == null) {				//This means that the second keyword isn't null.
+			while (i < word2.size() && total < 5) {
+				results.add(word2.get(j).document);
+				total++;
+			}
+			
+			return results;
+		}
+		
+		else if (word2 == null) { 				//This means that the first keyword isn't null.
+			while (i < word1.size() && total < 5) {
+				results.add(word1.get(j).document);
+				total++;
+			}
+			
+			return results;
+		}
+		
+		else {									//If both lists are true.
+			while(i < word1.size() && j < word2.size() && total < 5 ) {
+				
+				//Take advantage of the fact that the occurrences are in descending order.
+				//Comparison 1: If word1 has more occurrences than word2. If word1 == word2, take word1 and include in results.
+				if (word1.get(i).frequency >= word2.get(j).frequency && !results.contains(word1.get(i).document) ) {
+					results.add(word1.get(i).document);
+					total++;
+					i++;
+				}
+				
+				//Comparison 2: If word2 has a great occurrence than word2, and it doesn't exist in the results array.
+				else if (word2.get(j).frequency <= word1.get(i).frequency && !results.contains(word2.get(j).document) ) {
+					results.add(word2.get(j).document);
+					total++;
+					j++;
+				}
+				
+				//Comparison 3: If word2 is null from running through the list, and there is only word1's array left.
+				else if (word2.get(j) == null && !results.contains(word1.get(i).document) ) {
+					results.add(word1.get(i).document);
+					total++;
+					i++;
+				}
+				
+				//Comparison 4: If word1 is null from running through the list, and there is only word2's array left.
+				else if (word1.get(i) == null && !results.contains(word2.get(j).document)) {
+					results.add(word2.get(j).document);
+					total++;
+					j++;
+				}
+				
+				else {
+					return results;
+				}
+			}
+		}
+		
+		return results;
 	}
 }
