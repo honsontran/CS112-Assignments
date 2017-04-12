@@ -1,0 +1,477 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<title>
+CS112 Spring 2017: Expression Evaluation
+</title>
+<style>
+body { font: 14px Lato, Trebuchet MS, Verdana, Arial, Helvetica, sans-serif; }
+div.code { background: lightgrey; width: 50%; padding: 3px; }
+table { border-collapse: collapse; cellspacing: 0px; margin-left: 10%;}
+th { font: bold 14px Trebuchet MS; border-bottom: 1px solid black; padding: 10px;}
+td { padding: 2px; font: 13px Trebuchet MS; }
+td.pts { text-align: left; padding-left: 30px; }
+tt,pre { color: blue; }
+a, a:visited { color: blue; }
+</style>
+</head>
+
+<body>
+<center>
+<h2>Programming Assignment 2</h2>
+<h2>Expression Evaluation</h2>
+<h4>
+In this assignment you will implement a program to evaluate an arithmetic 
+expression USING RECURSION AND STACKS.
+</h4>
+
+<h3>Worth 65 points (6.5% of course grade)</h3>
+<h3>Posted Fri, Feb 17
+<h3>Due Fri, Mar 3, 11:00 PM (<font color="red">WARNING!! NO GRACE PERIOD</font>)
+<h3>Extended deadline (with ONE time free extension pass): Mon, Mar 6, 11:00 PM 
+(<font color="red">NO GRACE PERIOD</font>)
+</center>
+<p>You get ONE free extension pass for assignments during
+the semester, no questions asked. There will be a total
+of 5 assignments this semester, and you may use this one free extension pass for any of
+the 5 assignments.<br>
+<p><font color="red">A separate Sakai assignment will be opened for extensions AFTER the deadline for the regular submission has passed. The regular submission 
+deadline for all assignments will be on a Friday, 11 PM,
+and the deadline for the corresponding extensions will be on the 
+following Monday, 11 PM.</font>
+</center>
+<hr>
+
+<ul>
+<li>You will work <b>individually</b> on this assignment. Read the
+<a href="http://www.cs.rutgers.edu/academic-integrity/programming-assignments">
+DCS Academic Integrity Policy for Programming Assignments</a> - you are responsible
+for this. In particular, note that <b>"All Violations of the Academic
+Integrity Policy will be reported by the instructor to the appropriate Dean".</b>
+
+
+<li><h3>IMPORTANT - READ THE FOLLOWING CAREFULLY!!!</h3>
+
+<p><font color="red">Assignments emailed to the instructor or TAs will
+be ignored--they will NOT be accepted for grading. <br>
+We will only grade submissions in Sakai.</font><br>
+
+<p><font color="red">If your program does not compile, you will not get any credit.</font> 
+
+<p>Most compilation errors occur for two reasons: 
+<ol>
+<li> You 
+are programming outside Eclipse, and you delete the "package" statement at the top of the file. 
+If you do this, you are changing the program structure, and it will not compile when we
+test it.
+<li> You make some last minute 
+changes, and submit without compiling. 
+</ol>
+
+<h3>To avoid these issues, (a) START EARLY, and
+give yourself plenty of time to work through the assignment, and (b) Submit a version well
+before the deadline so there is at least something in Sakai for us to grade. And you can
+keep submitting later versions (up to 10) - we will 
+accept the LATEST version.</h3>
+</ul>
+
+<hr>
+<p>
+</p><ul>
+<li><a href="#expr">Expressions</a>
+</li><li><a href="#impl">Implementation and Grading</a>
+</li><li><a href="#running">Running the evaluator</a>
+</li><li><a href="#submission">Submission</a>
+</li><li><a href="#faq">FAQ - IMPORTANT!!! READ BEFORE ASKING QUESTIONS!!</a>
+</li></ul>
+
+<hr>
+
+<a name="expr"></a><h3>Expressions</h3>
+
+Here are some sample expressions of the kind your program will evaluate:
+
+<pre>   3
+   Xyz
+   3-4*5
+   a-(b+A[B[2]])*d+3
+   A[2*(a+b)]
+   (varx + vary*varz[(vara+varb[(a+b)*33])])/55
+</pre>
+
+The expressions will be restricted to the following components:
+<ul>
+  <li>Integer constants
+  </li><li>Scalar (simple, non-array) variables with integer values
+  </li><li>Arrays of integers, indexed with a constant or a subexpression
+  </li><li>Addition, subtraction, multiplication, and division operators
+  </li><li>Parenthesized subexpressions
+</li></ul>
+
+Note the following:
+<ul>
+  <li>Subexpressions (including indexes into arrays between '[' and ']') may be
+nested to any level
+  </li><li>Multiplication and division have higher precedence than addition
+  and subtraction
+  </li><li>Variable names (either scalars or arrays) will be made up of one or more
+letters ONLY (nothing but letters a-z and A-Z), are case sensitive (Xyz is different from xyz) and 
+will be unique.
+</li><li> Integer constants may have multiple digits
+</li><li>There may any number of spaces or tabs between any pair of tokens in the 
+expression. Tokens are variable names, constants, parentheses, square brackets, and
+operators.
+</li></ul>
+
+<p></p><hr>
+<a name="impl"></a><h3>Implementation and Grading</h3>
+
+<p>Download the attached <tt>expression_project.zip</tt> file to your
+computer. DO NOT unzip it. Instead, follow the instructions on the Eclipse page 
+under the section "Importing a Zipped Project into Eclipse" to get the entire
+project into your Eclipse workspace.
+
+<p>You will see a project called <tt>Expression Evaluation</tt> with 
+the following classes in package <tt>apps</tt>:
+<ul>
+<li><tt>ScalarSymbol</tt><br>
+This class represents a simple variable with a single value. Your implementation
+will create a <tt>ScalarSymbol</tt> object for every simple variable in the expression.
+You don't have to implement anything in this class, so <b>do not make any changes 
+to it.</b> 
+<p><li><tt>ArraySymbol</tt><br>
+This class represents an array of integer values. 
+Your implementation will create an <tt>ArraySymbol</tt> object for every array
+variable in the expression.
+You don't have to implement anything in this class, so <b>do not make any changes 
+to it.</b> 
+<p><li><tt>Expression</tt><br>
+This class represents the expression as a whole, and 
+consists all the following steps of the evaluation process:
+<ol>
+<p><li><b>15 pts</b>: <tt>buildSymbols</tt> - This method populates
+the two instance fields, <tt>scalars</tt> and <tt>arrays</tt>,
+with all simple (scalar) variables, and all array variables, respectively,
+that appear in the expression. <br>
+<font color="red">You will fill in the implementation of this method. Make
+sure to read the comments above the method header to get more details.</font>
+<p><li><tt>loadSymbolValues</tt> - This method reads values for all scalars and
+arrays from a file, into the <tt>ScalarSymbol</tt> and <tt>ArraySymbol</tt> objects
+stored in the <tt>scalars</tt> and <tt>arrays</tt> array lists. This method is
+already implemented, <b>do not make any changes</b>.
+<li><p><b>50 pts</b>: <tt>evaluate</tt> - This method evaluates the expression.<br>
+<font color="red">You will fill in the implementation of this method. You MUST use
+RECURSION to evaluate parenthesized subexpressions and array index
+expressions. You can write a separate private recursive method and call
+it from this public method.</font>
+</ol>
+<p>Two other methods, <tt>printScalars</tt> and <tt>printArrays</tt> are
+implemented for your convenience, and may be used to verify the 
+correctness of the scalars and arrays lists after the <tt>buildSymbols</tt>
+and <tt>loadSymbolValues</tt> methods.
+
+<li><p><tt>Evaluator</tt>, the application driver, which calls methods in <tt>Expression</tt>
+</li></ul>
+You are also given the following class in package <tt>structures</tt>:
+<ul>
+ <li><tt>Stack</tt>, to be used in the evaluation process
+</ul> 
+Lastly, two test files are included, <tt>etest1.txt</tt> and <tt>etest2.txt</tt>,
+appearing directly under the project folder.
+
+<p>Do not add any other classes. In particular, <font color="red">do NOT
+use your own stack class, ONLY use the one you are given.</font> The reason is,
+we will be using this same <tt>Stack</tt> class when we test your solution.
+
+<p>&nbsp;<p><b>Notes on tokenizing the expression</b>
+
+</p><p>You will need to separate out ("tokenize") the components of the
+expression in <tt>buildSymbols</tt> and <tt>evaluate</tt>. 
+Tokens include operands (variables and constants), operators
+(<tt>'+','-','*','/'</tt>), parentheses and square brackets.
+
+<p>It may be helpful (but you are not required) to use 
+<tt>java.util.StringTokenizer</tt> to tokenize the expression.
+See the <tt>loadSymbolValues</tt> method
+in <tt>Expression</tt> for an
+example of using <tt>StringTokenizer</tt> to extract variable names. 
+The <tt>delims</tt> field in the <tt>Expression</tt> class may be
+used in the tokenizing process.
+
+<p>The <a href="https://docs.oracle.com/javase/8/docs/api/java/util/StringTokenizer.html">
+documentation</a> of the <tt>StringTokenizer</tt> class says this:
+<ul>
+"<tt>StringTokenizer</tt> is a legacy class that is retained for compatibility 
+reasons although its use is discouraged in new code. It is recommended that 
+anyone seeking this functionality use the split method of 
+<tt>String</tt> or the <tt>java.util.regex</tt> package instead."
+</ul>
+
+<p>For the purpose of this assignment, you may use <tt>StringTokenizer</tt>
+without issue. Alternatively, you may use the <tt>split</tt> method of the
+<tt>String</tt> class, or the <tt>Pattern</tt> and <tt>Matcher</tt>
+classes in the package <tt>java.util.regex</tt>.
+
+<p>Or, you may simply parse the expression by scanning it a character
+at a time.
+
+<p>&nbsp;<p><b>Rules while working on <tt>Expression.java</tt></b>:
+</p><ul>
+<li>You may NOT add any <tt>import</tt> statements to the file. <br>
+Note that
+the <tt>java.io.*</tt>, <tt>java.util.*</tt>, and <tt>java.util.regex.*</tt>
+import statements at the
+top of the file allow for using ANY class in <tt>java.io</tt>, <tt>java.util</tt>,
+and <tt>java.util.regex</tt> without additional specification or qualification.
+</li><li>You may NOT add any fields to the <tt>Expression</tt> class.
+</li><li>You may NOT modify the headers of any of the given methods.
+</li><li>You may NOT delete any methods.
+</li><li>You MAY add helper methods if needed, as long as you make them <tt>private</tt>. (Including the recursive <tt>evaluate</tt> method discussed below.)
+</li></ul>
+
+<p>&nbsp;<p><b>Rules and guidelines for implementing <tt>evaluate</tt></b>
+
+</p><ul>
+<li>An expression may contain sub-expressions within parentheses - you
+<font color="red">MUST use RECURSION to evaluate sub-expressions</font>.
+<p><ul>
+In order to recurse on a subexpression, you will need to write a separate
+<font color="red">private</font> recursive evaluate method. 
+
+<p>One option is for this recursive method to accept as parameters two
+indexes that mark the start and end of the subexpression in the main expression.
+So, for instance, if the main expression is
+<pre>
+a-(b+A[B[2]])*d+3
+
+01234567891111111  (these are the positions of the chracters in the expression)
+          0123456
+</pre>
+then, to recursively evaluate the subexpression in parantheses, you may
+call the recursive evaluate method like this:
+<pre>
+   float res = evaluate(expr, 3, 11);
+</pre>
+To start with, you may call the recursive evaluate method
+from the public <tt>evaluate</tt> method like this (for the above expression):
+<pre>
+   return evaluate(expr, 0, expr.length()-1);
+</pre>
+which is the entire expression.
+
+<p>Another option is to have your recursive <tt>evaluate</tt> can accept a string as
+a parameter, for the subexpression you want to evaluate. In which case,
+for the parenthesized subexpression above, you can call it like this:
+<pre>
+  float res = evaluate(expr.substring(3,12));
+</pre>
+And the initial call from the public <tt>evaluate</tt> method would simply be:
+<pre>
+  return evaluate(expr);
+</pre>
+<p>You can include other parameters in your recursive evaluate, as necessary.
+When testing, we will not directly call your recursive evaluate, only the 
+public evaluate method with no parameters.
+</ul>
+<p><li><font color="red">Recursion MUST also be used to evaluate array subscripts</font>
+(within '[ and ']'), since a subscript is an expression. <br>
+Use the same process as above
+to do the recursive call for the subscript expression.
+
+<p><li>A stack may be used to store the values of operands as well as the
+results from evaluating subexpressions - see next point. 
+<p><li>Since <tt>*</tt> and <tt>/</tt> have precedence over <tt>+</tt> and
+<tt>-</tt>, it would help to store operators in another stack. (Think
+of how you would evaluate <tt>a+b*c</tt> with operands/intermediate results
+on one stack and operators on the other.) 
+
+<p><li>When you implement the <tt>evaluate</tt> method, you may want to test as
+you go, implementing code for and testing simple expressions, then building up
+to more complex expressions. The following is an example sequence of 
+the kinds of expressions you may want to build with:
+<ul>
+<li><tt>3</tt>
+</li><li><tt>a</tt>
+</li><li><tt>3+4</tt>
+</li><li><tt>a+b</tt>
+</li><li><tt>3+4*5</tt>
+</li><li><tt>a+b*c</tt>
+</li><li>Then introduce parentheses
+</li><li>Then try nested parentheses
+</li><li>Then introduce array subscripts, but no parentheses
+</li><li>Then try nested subscripts, but no parentheses
+</li><li>Then try using parentheses as well as array subscripts
+</li><li>Then try mixing arrays within parentheses, parentheses within array
+subscripts, etc.
+</li></ul>
+</li></ul>
+
+</p><p>You may assume that all input expressions will be correctly formatted,
+so you don't need to do any checking of the input expression for correctness.
+
+<p>You may also assume that all input symbol values files will be correctly formatted, 
+and every file will be guaranteed to have values for all symbols in the expression 
+that is being evaluated. So that when you do the evaluation, after
+<tt>loadSymbolValues</tt> runs, all required scalar and array
+values for evaluation will be correctly present in the <tt>arrays</tt>
+and <tt>scalars</tt> lists.
+
+<p><b>NOTE</b>:
+<font color="red">
+<p>When we test your <tt>evaluate</tt> method, we will 
+use OUR implementation of the
+<tt>buildSymbols</tt> method. This is for your benefit, so that in the
+event that your <tt>buildSymbols</tt> does not work correctly, your
+<tt>evaluate</tt> method will not be adversely affected.</font>
+
+<p></p><hr>
+<a name="running"></a><h3>Running the evaluator</h3>
+
+<p>You can test your implementation by running the <tt>Evaluator</tt> driver
+on various expressions and input symbol values file. 
+
+<p>When creating your
+own symbol values files for testing, make sure they are directly
+under the project folder, alongside <tt>etest1.txt</tt> and <tt>etest2.txt</tt>.
+
+<p>Since you are not going to turn in the
+<tt>Evaluator.java</tt> file, you may introduce debugging statements in 
+it as needed.
+
+<h4>No variables</h4>
+
+<pre>   Enter the expression, or hit return to quit =&gt; 3
+   Enter symbol values file name, or hit return if no symbols =&gt; 
+   Value of expression = 3.0
+
+   Enter the expression, or hit return to quit =&gt; 3-4*5
+   Enter symbol values file name, or hit return if no symbols =&gt; 
+   Value of expression = -17.0
+
+   Enter the expression, or hit return to quit =&gt; 
+</pre>
+Neither of the expressions above have variables, so just hit return to
+skip the symbol loading part.
+
+<h4>Variables, values loaded from file</h4>
+
+<pre>  Enter the expression, or hit return to quit =&gt; a
+  Enter symbol values file name, or hit return if no symbols =&gt; etest1.txt
+  Value of expression = 3.0
+
+  Enter the expression, or hit return to quit =&gt; 
+</pre>
+Since the expression has a variable, <tt>a</tt>, the evaluator needs to be supplied with
+a file that has a value for it. Here's what 
+<tt>etest1.txt</tt> looks like:
+<pre>  a 3
+  b 2
+  A 5 (2,3) (4,5)
+  B 3 (2,1)
+  d 56
+</pre>
+Each line of the file begins with a variable name.  For scalar variables, the
+name is followed by the variable's integer value.  For array
+variables, the name is followed by the array's length, which is followed by
+a series of (index,integer value) pairs. 
+
+<p><font color="red">Note: The index and integer value
+pairs must be written with no spaces around the index or integer value.<br>
+So, for instance, <tt>(2, 3)</tt> or <tt>( 2,3)</tt> or <tt>(2 ,3)</tt> are all incorrect.<br>
+Make sure you
+adhere to this requirement when you create your own input files for testing.</font>
+
+<p>If the value at a particular array index is not explicitly listed, it is set to 0 by default.
+
+<p>So, in the example above, <tt>A = [0,0,3,0,5]</tt> and <tt>B = [0,0,1]</tt>
+
+</p><p>Note that the symbol values file can have values for any number of symbols,
+so that it can be used as input for several expressions that contain one or
+more of the symbols in the file.
+
+</p><p>Here are a couple more evaluations of expressions for which the symbol values are 
+loaded from <tt>etest1.txt</tt>:
+
+</p><pre>  Enter the expression, or hit return to quit =&gt; (a + A[a*2-b])
+  Enter symbol values file name, or hit return if no symbols =&gt; etest1.txt
+  Value of expression = 8.0
+
+  Enter the expression, or hit return to quit =&gt; a - (b+A[B[2]])*d + 3
+  Enter symbol values file name, or hit return if no symbols =&gt; etest1.txt
+  Value of expression = -106.0
+
+  Enter the expression, or hit return to quit =&gt;
+</pre>
+
+For a change of pace, here's <tt>etest2.txt</tt>, which has
+the following symbols and values:
+<pre>  varx 6
+  vary 5
+  arrayA 10 (3,5) (8,12) (9,1)
+</pre>
+And here are evaluations using this file:
+<pre>  
+  Enter the expression, or hit return to quit =&gt; arrayA[arrayA[9]*(arrayA[3]+2)+1]-varx
+  Enter symbol values file name, or hit return if no symbols =&gt; etest2.txt
+  Value of expression = 6.0
+
+  Enter the expression, or hit return to quit =&gt;
+</pre>
+
+<p></p><hr>
+<a name="submission"></a><h3>Submission</h3>
+
+Submit your <b>Expression.java</b> file ONLY.
+
+<p></p><hr>
+<a name="faq"></a><h3>Frequently Asked Questions</h3>
+
+<b>Q: Are array names all uppercase?</b>
+
+<p>A:  No. Arrays could have lower case letters in their names. You can tell if a variable is an array if it is followed by an opening square bracket. See, for example, the last example in the "Expression" section, in which <tt>varb</tt> and <tt>varz</tt> are arrays:
+
+<pre>
+(varx + vary*varz[(vara+varb[(a+b)*33])])/55
+</pre>
+
+<p><b>Q: Can we delete spaces from the expression?</b>
+<p>A: Sure.
+
+<p><b>Q: Will the expression contain negative numbers?</b>
+
+<p>A: No. The expression will NOT have things like <tt>a*-3</tt> or <tt>x+(-y)</tt>. 
+It will ONLY have the BINARY
+operators +, -, /, and *. In other words, each of these operators will need two values (operands)
+to work on. (The <tt>-</tt> in front of <tt>3</tt> in 
+<tt>a*-3</tt> is called a UNARY minus. UNARY operators will NOT
+appear in the input expression.)
+
+<p>However, it is possible that in the process of evaluating the expression, you come
+across negative values, either because they appear in the input file, or because
+they are the result of evaluation. For instance, when evaluating 
+<tt>a+b</tt>, <tt>a=6</tt> and <tt>b=-9</tt> as input
+values, and a result of <tt>-3</tt> is a perfectly legitimate scenario. 
+
+<p><b>Q: What if an array index evaluates to a non-integer such as 5/2?</b>
+
+<p>A: Truncate it and use the resulting integer as the index.
+
+<p><b>Q: Could an array index evaluate to a negative integer?</b>
+
+<p>A: No, you will not be given any input expression or values that would result in a negative 
+integer value for an array index. In other words, you will not need to account for 
+this situation in your code.
+
+<p><b>Q: Could an array name be the same as a scalar?</b>
+
+<p>A: No. All variable names, for both scalars and arrays, are unique.
+
+<p><b>Q: Should the expression "()" be reported as an error?</b>
+
+<p>A: You don't have to do any error checking on the legality of the expression in the 
+<tt>buildSymbols</tt> or <tt>evaluate</tt> methods. When these methods are called, you may assume that the expression is correctly constructed. Which means you will not encounter an expression without at least one constant or variable, and all parens and brackets will be correctly formatted. Which means you won't need to deal with "()". 
+
+<p><b>Q: Can I convert the expression to postfix, then evaluate the postfix expression?</b>
+
+<p>A: NO!!! You have to work with the given traditional/infix form of the expression.
+
+</p></body></html>
