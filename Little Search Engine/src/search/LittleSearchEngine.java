@@ -48,7 +48,7 @@ class Occurrence {
  *
  */
 public class LittleSearchEngine {
-
+	
 	/**
 	 * This is a hash table of all keywords. The key is the actual keyword, and the associated value is
 	 * an array list of all occurrences of the keyword in documents. The array list is maintained in descending
@@ -60,6 +60,7 @@ public class LittleSearchEngine {
 	 * The hash table of all noise words - mapping is from word to itself.
 	 */
 	HashMap<String,String> noiseWords;
+
 	
 	/**
 	 * Creates the keyWordsIndex and noiseWords hash tables.
@@ -108,9 +109,46 @@ public class LittleSearchEngine {
 	 */
 	public HashMap<String,Occurrence> loadKeyWords(String docFile) 
 	throws FileNotFoundException {
-		// COMPLETE THIS METHOD
-		// THE FOLLOWING LINE HAS BEEN ADDED TO MAKE THE METHOD COMPILE
-		return null;
+		//Create a Hashmap to return.
+		HashMap<String, Occurrence> masterKey = new HashMap<String, Occurrence>();
+		
+		// Create a scanner that will go through the file.
+		Scanner sc = new Scanner(new File(docFile));
+		
+		//We want to keep loading in words until the end of the document.
+		while (sc.hasNext()) {
+			
+			//Target word to compare.
+			String word = getKeyWord( sc.next() );
+			
+			/*
+			 * Conditions: Call the getKeywords method. Determine what to do if you get a word or if you
+			 * 			   get null back.
+			 */
+			
+			//Condition 1: If the condition doesn't return null, either put into HashMap or increase the occurrence.
+			if (word != null) {				
+				//Condition 1a: If this word isn't placed into the HashMap yet.
+				if (!masterKey.containsKey(word)) {
+					//Make a new occurrence of this word and make the freq. 1
+					Occurrence occur = new Occurrence(docFile, 1);
+					
+					//Place this word into the Hashmap.
+					masterKey.put(word, occur);
+				}
+				
+				else { // If there already is a word in the map present.
+					//Simply add 1 to the frequency.
+					masterKey.get(word).frequency++;
+				}
+			}
+			
+		}
+		
+		// System.out.println(masterKey.toString());
+		
+		//Condition 2: If it's null, don't do anything.
+		return masterKey;
 	}
 	
 	/**
@@ -123,7 +161,52 @@ public class LittleSearchEngine {
 	 * @param kws Keywords hash table for a document
 	 */
 	public void mergeKeyWords(HashMap<String,Occurrence> kws) {
-		// COMPLETE THIS METHOD
+		
+		// Go through the HashMap of the keywords.
+		for (String key : kws.keySet()) {
+			
+			//System.out.println("-------------------------------------------------------------------------------");
+			//System.out.println("Current key for target: " + key);
+			
+			Occurrence freq = kws.get(key);		// This is the occurrence of the specific key (word)
+			
+			//There are two cases to this algorithm.
+			
+			// Case 1: The key does not exist in master yet.
+			if (!keywordsIndex.containsKey(key)) {
+				
+				// 1. Create an ArrayList to insert the occurrence into.
+				ArrayList<Occurrence> list = new ArrayList<Occurrence>();
+				
+				// 2. add this occurrence into the Arraylist.
+				list.add(freq);
+				
+				// 3. Now, we can put this into the designated index of master.
+				keywordsIndex.put(key, list);
+				
+				// 4. Call insertLastOccurrence to sort the ArrayList.
+				insertLastOccurrence(list);
+				
+			}
+			
+			// Case 2: The key exists in master, then there should also be an ArrayList present.
+			else if(keywordsIndex.containsKey(key)) {
+				
+				// 1. Get the list of occurrences we are working with.
+				ArrayList<Occurrence> currList = keywordsIndex.get(key);
+				
+				// 2. Add this occurrence into the ArrayList.
+				currList.add(freq);
+				
+				// 3. Now, we have to update the ArrayList.
+				insertLastOccurrence(currList);
+				
+				// 4. Put this sorted list back into master.
+				keywordsIndex.put(key, currList);
+				
+			}
+		}
+
 	}
 	
 	/**
@@ -138,62 +221,52 @@ public class LittleSearchEngine {
 	 * @return Keyword (word without trailing punctuation, LOWER CASE)
 	 */
 	public String getKeyWord(String word) {
+		//Turn everything to lower-case. Doing so will be able to compare words a lot easier.
+		word = word.toLowerCase();
 		
-		String curr = "";		//keeps track of our current keyword
-		
-		//Exception: When punctuation is in the beginning.
-		if ( Character.isLetter( word.charAt(0) ) ) {
-			return null;			
+		// Noise words include those that are a letter or less. If this is a case,
+		// it's automatically null.
+		if ( word.length() <= 1 || word == null ){
+			return null;
 		}
 		
-		//Turn everything to lowercase.
-		word.toLowerCase();
+		//Strip the beginning punctuation until it hits a letter.
+		while (!Character.isLetter(word.charAt(0)) ) {
+			
+			if (word.length() == 1) {
+				return null;
+			}
+			
+			word = word.substring(1, word.length());
+		}
+		
+		//Now strip the end until it hits a letter.
+		while ( !Character.isLetter(word.charAt(word.length()-1)) ) {
+			
+			if (word.length() == 1) {
+				return null;
+			}
+			
+			word = word.substring(0, word.length()-1);			
+		}
 		
 		//Run through the word and see if it's a letter at each char.
 		for (int i = 0; i < word.length(); i++) {
 			
-			if ( Character.isLetter( word.charAt(i) ) ) {			//If letter, add to keyword string
-				curr += word.charAt(i);
+			if (!Character.isLetter( word.charAt(i)) ) {
+				return null;
 			}
 			
-			else {	//Anything other than a letter
-				if ( Character.isDigit( word.charAt(i) ) ) {
-					return null;
-				}
-				
-				else if ( isPunctuation(word.charAt(i)) ) { //If it's punctuation
-					//Case 1: If the punctuation is between 2 chars (i.e. we're), return null.
-					if ( Character.isLetter( word.charAt(i-1) ) && Character.isLetter( word.charAt(i+1) ) ) {
-						return null;
-					}
-				
-					/* Case 2: If there's just a trailing end of punctuation (i.e. what??!!?!?)
-					 * 		   keep checking the rest of the string in the next i++
-					 */
-					
-					// Case 3: If you have punctuation and there's a letter or not a punctuation, return null.
-					if ( !isPunctuation(word.charAt(i)) || Character.isDigit( word.charAt(i+1) ) ) {
-						return null;
-					}
-					
-				}
-			}
 		}
 		
-		return curr;
-	
-	}
-	
-	private boolean isPunctuation(char c) {
-		if (c == '.' || c == ',' || c == '?' || c == ':' || c == ';' || c == '!') {
-			return true;
+		// After stripping the word, we have to check if it's a noise word.
+		if (noiseWords.containsKey(word)) {
+			return null;
 		}
 		
-		else {
-			return false;
-		}
+		return word;
 	}
-	
+
 	/**
 	 * Inserts the last occurrence in the parameter list in the correct position in the
 	 * same list, based on ordering occurrences on descending frequencies. The elements
@@ -206,10 +279,50 @@ public class LittleSearchEngine {
 	 *         null if the size of the input list is 1. This returned array list is only used to test
 	 *         your code - it is not used elsewhere in the program.
 	 */
-	public ArrayList<Integer> insertLastOccurrence(ArrayList<Occurrence> occs) {
-		// COMPLETE THIS METHOD
-		// THE FOLLOWING LINE HAS BEEN ADDED TO MAKE THE METHOD COMPILE
-		return null;
+	public ArrayList<Integer> insertLastOccurrence(ArrayList<Occurrence> occs) { //checked
+		ArrayList<Integer> freq = new ArrayList<Integer>();
+		ArrayList<Integer> points = new ArrayList<Integer>();
+
+		
+		//Declare variables for binary search
+		int low = 0;
+		int hi = occs.size()-2;
+		int mid;				//keep track of midpoint
+		int target = occs.get( occs.size()-1 ).frequency;
+		
+		// System.out.println("Our target is: " + target);
+		
+		//Get all the frequencies for the occurrences.
+		for (int i = 0; i < occs.size(); i++) {
+			freq.add( occs.get(i).frequency );
+		}
+		
+		//System.out.println("Our current freq list: " + freq.toString());
+		
+		// Now to do binary search.
+		// The point of this method is to return the mid points that we visit.
+		while (hi >= low) {
+			mid = (hi + low)/2;		// Calculate our mid point.
+			
+			//System.out.println("Our new mid is: " + mid);
+			
+			points.add(mid);		// then add this point to our points list.
+
+			if (freq.get(mid) < target) {
+				hi = mid - 1;
+			}
+			
+			else if (freq.get(mid) > target){
+				low = mid + 1;
+			}
+			
+			else {
+				break;
+			}
+
+		}
+		
+		return points;
 	}
 	
 	/**
@@ -227,8 +340,97 @@ public class LittleSearchEngine {
 	 *         the result is null.
 	 */
 	public ArrayList<String> top5search(String kw1, String kw2) {
-		// COMPLETE THIS METHOD
-		// THE FOLLOWING LINE HAS BEEN ADDED TO MAKE THE METHOD COMPILE
-		return null;
+		//Create an Arraylist to keep track of which documents have the more frequent words in order.
+		ArrayList<String> results = new ArrayList<String>();
+		
+		//Create an ArrayList for the first and second keywords
+		ArrayList<Occurrence> word1 = keywordsIndex.get(kw1);
+		ArrayList<Occurrence> word2 = keywordsIndex.get(kw2);
+		
+		//Keep track of how many documents there currently are in the search results.
+		int total = 0;
+		int i = 0;
+		int j = 0;
+		
+		/*
+		 * Check if any of the lists are null, meaning that there is no such word in the documents.
+		 * This search continues until 5 documents populate the
+		 */
+		
+		//If both lists are null.
+		if (word1 == null && word2 == null) {
+			results = inverse(results);
+			return results;
+		}
+		
+		else if (word1 == null) {				//This means that the second keyword isn't null.
+			while (i < word2.size() && total < 5) {
+				results.add(word2.get(j).document);
+				total++;
+			}
+			
+			results = inverse(results);
+			return results;
+		}
+		
+		else if (word2 == null) { 				//This means that the first keyword isn't null.
+			while (i < word1.size() && total < 5) {
+				results.add(word1.get(j).document);
+				total++;
+			}
+			
+			results = inverse(results);
+			return results;
+		}
+		
+		else {									//If both lists are true.
+			while(i < word1.size() && j < word2.size() && total < 5 ) {
+				
+				//Take advantage of the fact that the occurrences are in descending order.
+				//Comparison 1: If word1 has more occurrences than word2. If word1 == word2, take word1 and include in results.
+				if (word1.get(i).frequency >= word2.get(j).frequency && !results.contains(word1.get(i).document) ) {
+					results.add(word1.get(i).document);
+					total++;
+					i++;
+				}
+				
+				//Comparison 2: If word2 has a great occurrence than word2, and it doesn't exist in the results array.
+				else if (word2.get(j).frequency <= word1.get(i).frequency && !results.contains(word2.get(j).document) ) {
+					results.add(word2.get(j).document);
+					total++;
+					j++;
+				}
+				
+				//Comparison 3: If word2 is null from running through the list, and there is only word1's array left.
+				else if (word2.get(j) == null && !results.contains(word1.get(i).document) ) {
+					results.add(word1.get(i).document);
+					total++;
+					i++;
+				}
+				
+				//Comparison 4: If word1 is null from running through the list, and there is only word2's array left.
+				else if (word1.get(i) == null && !results.contains(word2.get(j).document)) {
+					results.add(word2.get(j).document);
+					total++;
+					j++;
+				}
+				
+				else {
+					results = inverse(results);
+					return results;
+				}
+			}
+		}
+		results = inverse(results);
+		return results;
+	}
+	
+	private ArrayList<String> inverse(ArrayList<String> original) {
+		ArrayList<String> results = new ArrayList<String>();
+		
+		for (int i = original.size(); i > 0 ; i--) {
+			results.add(original.get(i-1));
+		}
+		return results;
 	}
 }
